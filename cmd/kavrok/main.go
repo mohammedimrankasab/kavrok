@@ -1,3 +1,4 @@
+// Package main is the entry point for the Kavrok CLI.
 package main
 
 import (

@@ -1,3 +1,4 @@
+// Package logger provides structured logging capabilities for Kavrok.
 package logger
 
 import (

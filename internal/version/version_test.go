@@ -1,3 +1,4 @@
+// Package version provides build and runtime version information.
 package version
 
 import "testing"

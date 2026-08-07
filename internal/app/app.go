@@ -1,3 +1,4 @@
+// Package app contains the Kavrok application lifecycle and orchestration.
 package app
 
 import "go.uber.org/zap"

@@ -1,7 +1,9 @@
+// Package version provides build and runtime version information.
 package version
 
 import "runtime"
 
+// Info contains build and runtime metadata.
 type Info struct {
 	Version   string
 	Commit    string
@@ -18,6 +20,7 @@ var (
 	buildDate = "unknown"
 )
 
+// Get returns the current application version information.
 func Get() Info {
 	return Info{
 		Version:   version,

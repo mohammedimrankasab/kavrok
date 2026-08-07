@@ -1,3 +1,4 @@
+// Package config provides application configuration handling.
 package config
 
 import "testing"
