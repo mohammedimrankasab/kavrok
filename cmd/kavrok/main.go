@@ -1,8 +1,12 @@
 package main
 
 import (
+	"log"
+	"os"
+
 	"go.uber.org/zap"
 
+	"github.com/mohammedimrankasab/kavrok/internal/app"
 	"github.com/mohammedimrankasab/kavrok/internal/logger"
 )
 
@@ -32,4 +36,13 @@ func (a *App) Execute() error {
 	}()
 
 	return nil
+}
+
+func main() {
+	a := app.New()
+
+	if err := a.Execute(); err != nil {
+		log.Printf("application failed: %v", err)
+		os.Exit(1)
+	}
 }
