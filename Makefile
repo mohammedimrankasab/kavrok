@@ -16,9 +16,9 @@ DATE            := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 LDFLAGS := \
 	-s -w \
-	-X main.version=$(VERSION) \
-	-X main.commit=$(COMMIT) \
-	-X main.buildDate=$(DATE)
+	-X github.com/mohammedimrankasab/kavrok/internal/version.version=$(VERSION) \
+	-X github.com/mohammedimrankasab/kavrok/internal/version.commit=$(COMMIT) \
+	-X github.com/mohammedimrankasab/kavrok/internal/version.buildDate=$(DATE)
 
 .DEFAULT_GOAL := help
 
@@ -43,9 +43,10 @@ run: ## Run Kavrok
 	$(GO) run ./cmd/kavrok
 
 .PHONY: build
-build: ## Build binary
-	@mkdir -p $(BUILD_DIR)
-	$(GO) build \
+build:
+	mkdir -p $(BUILD_DIR)
+
+	go build \
 		-ldflags "$(LDFLAGS)" \
 		-o $(BUILD_DIR)/$(APP) \
 		./cmd/kavrok
