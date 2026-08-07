@@ -1,0 +1,10 @@
+* text=auto eol=lf
+
+*.go text
+*.md text
+*.yaml text
+*.yml text
+
+*.png binary
+*.jpg binary
+*.svg text

@@ -1,11 +1,20 @@
 package app
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/mohammedimrankasab/kavrok/internal/logger"
+)
 
 func TestNew(t *testing.T) {
 	t.Parallel()
 
-	app := New()
+	log, err := logger.New()
+	if err != nil {
+		t.Fatalf("failed to initialize logger: %v", err)
+	}
+
+	app := New(log)
 
 	if app == nil {
 		t.Fatal("expected application to be created")
@@ -15,7 +24,12 @@ func TestNew(t *testing.T) {
 func TestExecute(t *testing.T) {
 	t.Parallel()
 
-	app := New()
+	log, err := logger.New()
+	if err != nil {
+		t.Fatalf("failed to initialize logger: %v", err)
+	}
+
+	app := New(log)
 
 	if err := app.Execute(); err != nil {
 		t.Fatalf("Execute() returned error: %v", err)

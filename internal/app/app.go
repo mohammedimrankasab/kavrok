@@ -1,14 +1,26 @@
 package app
 
+import "go.uber.org/zap"
+
 // App represents the Kavrok application.
-type App struct{}
+type App struct {
+	logger *zap.Logger
+}
 
 // New creates a new application.
-func New() *App {
-	return &App{}
+func New(log *zap.Logger) *App {
+	return &App{
+		logger: log,
+	}
 }
 
 // Execute starts the application.
 func (a *App) Execute() error {
+	defer func() {
+		_ = a.logger.Sync()
+	}()
+
+	a.logger.Info("starting kavrok")
+
 	return nil
 }
