@@ -11,6 +11,9 @@ import (
 type fakeKubernetesClient struct {
 	serverVersion *version.Info
 	err           error
+	pods          *corev1.PodList
+	namespaceList *corev1.NamespaceList
+	nodes         *corev1.NodeList
 }
 
 func (f *fakeKubernetesClient) ServerVersion() (*version.Info, error) {
@@ -19,8 +22,32 @@ func (f *fakeKubernetesClient) ServerVersion() (*version.Info, error) {
 func (f *fakeKubernetesClient) ListNodes(
 	_ context.Context,
 ) (*corev1.NodeList, error) {
-	return nil, nil
+	if f.err != nil {
+		return nil, f.err
+	}
+
+	return f.nodes, nil
 }
+
+func (f *fakeKubernetesClient) ListNamespaces(
+	_ context.Context,
+) (*corev1.NamespaceList, error) {
+	if f.err != nil {
+		return nil, f.err
+	}
+	return f.namespaceList, nil
+}
+
+func (f *fakeKubernetesClient) ListPods(
+	_ context.Context,
+) (*corev1.PodList, error) {
+	if f.err != nil {
+		return nil, f.err
+	}
+	return f.pods, nil
+}
+
+var _ kubernetes.Client = (*fakeKubernetesClient)(nil)
 
 func newTestDependencies() Dependencies {
 	return Dependencies{
