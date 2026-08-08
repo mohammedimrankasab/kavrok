@@ -19,4 +19,16 @@ func TestInfo(t *testing.T) {
 	if info.BuildDate == "" {
 		t.Fatal("build date should not be empty")
 	}
+
+	if info.GoVersion == "" {
+		t.Error("expected Go version")
+	}
+
+	if info.Platform == "" {
+		t.Error("expected platform")
+	}
+
+	if info.TreeState == "" {
+		t.Error("expected tree state")
+	}
 }

@@ -95,7 +95,7 @@ vet: ## Run go vet
 
 .PHONY: lint
 lint: ## Run golangci-lint
-	$(GO) tool $(GOLINT) run
+	$(GOLINT) run
 
 # ==============================================================================
 # Testing
