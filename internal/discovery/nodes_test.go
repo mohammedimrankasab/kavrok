@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -115,6 +116,60 @@ func TestDiscoverNodesFailure(t *testing.T) {
 		t.Fatalf(
 			"expected wrapped node error, got %v",
 			err,
+		)
+	}
+}
+
+func TestDiscoverNodesCapturesAllocatableResources(t *testing.T) {
+	t.Parallel()
+
+	client := &fakeKubernetesClient{
+		nodes: &corev1.NodeList{
+			Items: []corev1.Node{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "test-node",
+					},
+					Status: corev1.NodeStatus{
+						NodeInfo: corev1.NodeSystemInfo{
+							KubeletVersion:  "v1.36.1",
+							OperatingSystem: "linux",
+							Architecture:    "arm64",
+						},
+						Allocatable: corev1.ResourceList{
+							corev1.ResourceCPU:    resource.MustParse("8"),
+							corev1.ResourceMemory: resource.MustParse("7Gi"),
+						},
+					},
+				},
+			},
+		},
+	}
+
+	result, err := DiscoverNodes(context.Background(), client)
+	if err != nil {
+		t.Fatalf("DiscoverNodes() failed: %v", err)
+	}
+
+	if len(result.Nodes) != 1 {
+		t.Fatalf("expected 1 node, got %d", len(result.Nodes))
+	}
+
+	node := result.Nodes[0]
+
+	if node.AllocatableCPU != "8" {
+		t.Errorf(
+			"expected allocatable CPU %q, got %q",
+			"8",
+			node.AllocatableCPU,
+		)
+	}
+
+	if node.AllocatableMemory != "7Gi" {
+		t.Errorf(
+			"expected allocatable memory %q, got %q",
+			"7Gi",
+			node.AllocatableMemory,
 		)
 	}
 }

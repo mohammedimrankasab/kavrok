@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	corev1 "k8s.io/api/core/v1"
-
 	"github.com/mohammedimrankasab/kavrok/internal/kubernetes"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 // DiscoverWorkloads retrieves pod health information.
@@ -29,10 +29,12 @@ func DiscoverWorkloads(
 
 	for _, pod := range pods.Items {
 		podSummary := PodSummary{
-			Name:      pod.Name,
-			Namespace: pod.Namespace,
-			Phase:     string(pod.Status.Phase),
-			Ready:     podReady(pod),
+			Name:            pod.Name,
+			Namespace:       pod.Namespace,
+			Phase:           string(pod.Status.Phase),
+			Ready:           podReady(pod),
+			RequestedCPU:    podRequestedResource(pod, corev1.ResourceCPU),
+			RequestedMemory: podRequestedResource(pod, corev1.ResourceMemory),
 		}
 
 		if pod.Status.Phase == corev1.PodPending {
@@ -86,4 +88,23 @@ func podPendingCondition(
 	}
 
 	return nil
+}
+
+func podRequestedResource(
+	pod corev1.Pod,
+	resourceName corev1.ResourceName,
+) string {
+	total := resource.Quantity{}
+
+	for _, container := range pod.Spec.Containers {
+		if quantity, ok := container.Resources.Requests[resourceName]; ok {
+			total.Add(quantity)
+		}
+	}
+
+	if total.IsZero() {
+		return ""
+	}
+
+	return total.String()
 }

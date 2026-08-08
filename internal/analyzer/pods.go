@@ -5,6 +5,7 @@ import (
 
 	"github.com/mohammedimrankasab/kavrok/internal/discovery"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 func analyzePods(
@@ -28,17 +29,31 @@ func analyzePods(
 
 		unschedulablePods++
 
-		findings = append(findings, Finding{
+		message := fmt.Sprintf(
+			"%s/%s: %s",
+			pod.Namespace,
+			pod.Name,
+			pod.PendingMessage,
+		)
+
+		finding := Finding{
 			Severity: SeverityWarning,
 			Code:     "POD_UNSCHEDULABLE",
 			Title:    "Pod cannot be scheduled",
-			Message: fmt.Sprintf(
-				"%s/%s: %s",
-				pod.Namespace,
-				pod.Name,
-				pod.PendingMessage,
-			),
-		})
+			Message:  message,
+		}
+
+		if evidence := memorySchedulingEvidence(
+			snapshot,
+			pod.RequestedMemory,
+		); len(evidence) > 0 {
+			finding.Evidence = append(
+				finding.Evidence,
+				evidence...,
+			)
+		}
+
+		findings = append(findings, finding)
 	}
 
 	genericPendingPods := workloads.PendingPods - unschedulablePods
@@ -80,4 +95,52 @@ func analyzePods(
 	}
 
 	return findings
+}
+
+func memorySchedulingEvidence(
+	snapshot discovery.ClusterSnapshot,
+	requestedMemory string,
+) []Evidence {
+	requested, err := resource.ParseQuantity(requestedMemory)
+	if err != nil {
+		return nil
+	}
+
+	for _, node := range snapshot.Nodes.Nodes {
+		if node.AllocatableMemory == "" {
+			continue
+		}
+
+		allocatable, err := resource.ParseQuantity(
+			node.AllocatableMemory,
+		)
+		if err != nil {
+			continue
+		}
+
+		if requested.Cmp(allocatable) <= 0 {
+			return nil
+		}
+
+		return []Evidence{
+			{
+				Key:   "node",
+				Value: node.Name,
+			},
+			{
+				Key:   "requested_memory",
+				Value: requestedMemory,
+			},
+			{
+				Key:   "allocatable_memory",
+				Value: node.AllocatableMemory,
+			},
+			{
+				Key:   "diagnosis",
+				Value: "requested memory exceeds node allocatable memory",
+			},
+		}
+	}
+
+	return nil
 }

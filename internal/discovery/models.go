@@ -17,6 +17,8 @@ type NodeSummary struct {
 	KubernetesVersion string
 	OS                string
 	Architecture      string
+	AllocatableCPU    string
+	AllocatableMemory string
 }
 
 // NodeSummaryList contains discovered Kubernetes nodes.
@@ -40,12 +42,14 @@ type NamespaceSummary struct {
 
 // PodSummary contains information about a Kubernetes pod.
 type PodSummary struct {
-	Name           string
-	Namespace      string
-	Phase          string
-	Ready          bool
-	PendingReason  string
-	PendingMessage string
+	Name            string
+	Namespace       string
+	Phase           string
+	Ready           bool
+	PendingReason   string
+	PendingMessage  string
+	RequestedCPU    string
+	RequestedMemory string
 }
 
 // WorkloadSummary contains high-level workload information.

@@ -7,6 +7,7 @@ import (
 
 	"github.com/mohammedimrankasab/kavrok/internal/kubernetes"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/version"
 )
@@ -371,4 +372,89 @@ func TestPodPendingConditionNotFound(t *testing.T) {
 		t.Fatal("expected no pending condition")
 	}
 
+}
+
+func TestDiscoverWorkloadsCapturesResourceRequests(t *testing.T) {
+	t.Parallel()
+
+	client := &fakeWorkloadClient{
+		pods: &corev1.PodList{
+			Items: []corev1.Pod{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "memory-heavy",
+						Namespace: "default",
+					},
+					Spec: corev1.PodSpec{
+						Containers: []corev1.Container{
+							{
+								Name:  "app",
+								Image: "nginx",
+								Resources: corev1.ResourceRequirements{
+									Requests: corev1.ResourceList{
+										corev1.ResourceCPU:    resource.MustParse("500m"),
+										corev1.ResourceMemory: resource.MustParse("100Gi"),
+									},
+								},
+							},
+						},
+					},
+					Status: corev1.PodStatus{
+						Phase: corev1.PodPending,
+						Conditions: []corev1.PodCondition{
+							{
+								Type:    corev1.PodScheduled,
+								Status:  corev1.ConditionFalse,
+								Reason:  "Unschedulable",
+								Message: "Insufficient memory",
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	result, err := DiscoverWorkloads(context.Background(), client)
+	if err != nil {
+		t.Fatalf("DiscoverWorkloads() failed: %v", err)
+	}
+
+	if len(result.Pods) != 1 {
+		t.Fatalf("expected 1 pod, got %d", len(result.Pods))
+	}
+
+	pod := result.Pods[0]
+
+	if pod.RequestedCPU != "500m" {
+		t.Errorf(
+			"expected CPU request %q, got %q",
+			"500m",
+			pod.RequestedCPU,
+		)
+	}
+
+	if pod.RequestedMemory != "100Gi" {
+		t.Errorf(
+			"expected memory request %q, got %q",
+			"100Gi",
+			pod.RequestedMemory,
+		)
+	}
+
+	if pod.PendingReason != "Unschedulable" {
+		t.Errorf(
+			"expected pending reason %q, got %q",
+			"Unschedulable",
+			pod.PendingReason,
+		)
+	}
+
+	if pod.PendingMessage != "Insufficient memory" {
+		t.Errorf(
+			"expected pending message %q, got %q",
+			"Insufficient memory",
+			pod.PendingMessage,
+		)
+	}
 }

@@ -20,4 +20,11 @@ type Finding struct {
 	Code     string
 	Title    string
 	Message  string
+	Evidence []Evidence
+}
+
+// Evidence represents structured data supporting a finding.
+type Evidence struct {
+	Key   string
+	Value string
 }

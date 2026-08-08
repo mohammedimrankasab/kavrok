@@ -44,6 +44,8 @@ func nodeSummary(node corev1.Node) NodeSummary {
 		KubernetesVersion: node.Status.NodeInfo.KubeletVersion,
 		OS:                node.Status.NodeInfo.OperatingSystem,
 		Architecture:      node.Status.NodeInfo.Architecture,
+		AllocatableCPU:    node.Status.Allocatable.Cpu().String(),
+		AllocatableMemory: node.Status.Allocatable.Memory().String(),
 	}
 }
 

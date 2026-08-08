@@ -13,7 +13,9 @@ import (
 func newDoctorCommand(
 	clientFactory func() (kubernetes.Client, error),
 ) *cobra.Command {
-	return &cobra.Command{
+	output := "text"
+
+	cmd := &cobra.Command{
 		Use:   "doctor",
 		Short: "Diagnose Kubernetes cluster health",
 		RunE: func(cmd *cobra.Command, _ []string) error {
@@ -46,14 +48,35 @@ func newDoctorCommand(
 
 			findings := analyzer.Analyze(snapshot)
 
-			if err := renderDoctorResult(
-				cmd,
-				snapshot,
-				findings,
-			); err != nil {
+			switch output {
+			case "text":
+				if err := renderDoctorResult(
+					cmd,
+					snapshot,
+					findings,
+				); err != nil {
+					return fmt.Errorf(
+						"render doctor result: %w",
+						err,
+					)
+				}
+
+			case "json":
+				if err := renderDoctorJSON(
+					cmd,
+					snapshot,
+					findings,
+				); err != nil {
+					return fmt.Errorf(
+						"render doctor JSON: %w",
+						err,
+					)
+				}
+
+			default:
 				return fmt.Errorf(
-					"render doctor result: %w",
-					err,
+					"unsupported output format %q",
+					output,
 				)
 			}
 
@@ -64,6 +87,15 @@ func newDoctorCommand(
 			return nil
 		},
 	}
+
+	cmd.Flags().StringVar(
+		&output,
+		"output",
+		"text",
+		"Output format: text or json",
+	)
+
+	return cmd
 }
 
 func renderDoctorResult(
@@ -134,13 +166,24 @@ func renderDoctorResult(
 	}
 
 	for _, finding := range findings {
-		if _, err := fmt.Fprintf(
+		evidence := findingEvidence(finding)
+
+		message := finding.Message
+
+		if len(evidence) > 0 {
+			if diagnosis, ok := evidence["diagnosis"]; ok {
+				message = fmt.Sprintf("%s (%s)", message, diagnosis)
+			}
+		}
+
+		_, err := fmt.Fprintf(
 			out,
 			"%s %-18s %s\n",
 			severitySymbol(finding.Severity),
 			finding.Code,
-			finding.Message,
-		); err != nil {
+			message,
+		)
+		if err != nil {
 			return err
 		}
 	}
@@ -235,4 +278,16 @@ func hasWarningFindings(
 	}
 
 	return false
+}
+
+func findingEvidence(
+	finding analyzer.Finding,
+) map[string]string {
+	evidence := make(map[string]string)
+
+	for _, item := range finding.Evidence {
+		evidence[item.Key] = item.Value
+	}
+
+	return evidence
 }
