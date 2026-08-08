@@ -1,20 +1,32 @@
 package doctor
 
 import (
+	"context"
 	"errors"
 	"testing"
 
 	"github.com/mohammedimrankasab/kavrok/internal/kubernetes"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/version"
 )
 
 type fakeKubernetesClient struct {
 	serverVersion *version.Info
 	err           error
+	nodes         *corev1.NodeList
 }
 
 func (f *fakeKubernetesClient) ServerVersion() (*version.Info, error) {
 	return f.serverVersion, f.err
+}
+func (f *fakeKubernetesClient) ListNodes(
+	_ context.Context,
+) (*corev1.NodeList, error) {
+	if f.err != nil {
+		return nil, f.err
+	}
+
+	return f.nodes, nil
 }
 
 func TestResultPassed(t *testing.T) {

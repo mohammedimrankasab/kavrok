@@ -1,7 +1,10 @@
 package cli
 
 import (
+	"context"
+
 	"github.com/mohammedimrankasab/kavrok/internal/kubernetes"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/version"
 )
 
@@ -12,6 +15,11 @@ type fakeKubernetesClient struct {
 
 func (f *fakeKubernetesClient) ServerVersion() (*version.Info, error) {
 	return f.serverVersion, f.err
+}
+func (f *fakeKubernetesClient) ListNodes(
+	_ context.Context,
+) (*corev1.NodeList, error) {
+	return nil, nil
 }
 
 func newTestDependencies() Dependencies {

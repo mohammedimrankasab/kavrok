@@ -7,3 +7,18 @@ type ClusterInfo struct {
 	Platform string
 	Commit   string
 }
+
+// NodeSummary contains the information Kavrok needs about a node.
+type NodeSummary struct {
+	Name              string
+	Ready             bool
+	Roles             []string
+	KubernetesVersion string
+	OS                string
+	Architecture      string
+}
+
+// NodeSummaryList contains discovered Kubernetes nodes.
+type NodeSummaryList struct {
+	Nodes []NodeSummary
+}

@@ -9,19 +9,6 @@ import (
 	"github.com/mohammedimrankasab/kavrok/internal/kubernetes"
 )
 
-type fakeKubernetesClient struct {
-	serverVersion *version.Info
-	err           error
-}
-
-func (f *fakeKubernetesClient) ServerVersion() (*version.Info, error) {
-	if f.err != nil {
-		return nil, f.err
-	}
-
-	return f.serverVersion, nil
-}
-
 var _ kubernetes.Client = (*fakeKubernetesClient)(nil)
 
 func TestDiscover(t *testing.T) {
@@ -69,7 +56,7 @@ func TestDiscoverServerVersionFailure(t *testing.T) {
 	t.Parallel()
 
 	client := &fakeKubernetesClient{
-		err: errors.New("connection refused"),
+		versionErr: errors.New("connection refused"),
 	}
 
 	_, err := Discover(client)
@@ -77,10 +64,10 @@ func TestDiscoverServerVersionFailure(t *testing.T) {
 		t.Fatal("expected Discover() to fail")
 	}
 
-	if !errors.Is(err, client.err) {
+	if !errors.Is(err, client.versionErr) {
 		t.Fatalf(
 			"expected error to wrap %q, got %v",
-			client.err,
+			client.versionErr,
 			err,
 		)
 	}

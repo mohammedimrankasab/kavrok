@@ -3,10 +3,13 @@
 package kubernetes
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
 
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/version"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -16,6 +19,7 @@ import (
 // Client represents the Kubernetes operations required by Kavrok.
 type Client interface {
 	ServerVersion() (*version.Info, error)
+	ListNodes(ctx context.Context) (*corev1.NodeList, error)
 }
 
 // client implements Client using Kubernetes client-go.
@@ -44,6 +48,13 @@ func New() (Client, error) {
 func (c *client) ServerVersion() (*version.Info, error) {
 	return c.clientset.Discovery().
 		ServerVersion()
+}
+
+// ListNodes returns all nodes in the Kubernetes cluster.
+func (c *client) ListNodes(ctx context.Context) (*corev1.NodeList, error) {
+	return c.clientset.CoreV1().
+		Nodes().
+		List(ctx, metav1.ListOptions{})
 }
 
 func loadConfig() (*rest.Config, error) {

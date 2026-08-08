@@ -15,6 +15,11 @@ func Discover(client kubernetes.Client) (ClusterInfo, error) {
 			err,
 		)
 	}
+	if info == nil {
+		return ClusterInfo{}, fmt.Errorf(
+			"get Kubernetes server version: empty response",
+		)
+	}
 
 	return ClusterInfo{
 		Version:  info.GitVersion,
