@@ -11,6 +11,7 @@ import (
 
 type fakeKubernetesClient struct {
 	serverVersion *version.Info
+	clusterName   string
 	nodes         *corev1.NodeList
 	namespaces    *corev1.NamespaceList
 	pods          *corev1.PodList
@@ -49,6 +50,10 @@ func (f *fakeKubernetesClient) ListPods(
 	_ context.Context,
 ) (*corev1.PodList, error) {
 	return f.pods, f.podsErr
+}
+
+func (f *fakeKubernetesClient) ClusterName() string {
+	return f.clusterName
 }
 
 var _ kubernetes.Client = (*fakeKubernetesClient)(nil)

@@ -16,6 +16,7 @@ type fakeKubernetesClient struct {
 	pods          *corev1.PodList
 	namespaceList *corev1.NamespaceList
 	nodes         *corev1.NodeList
+	clusterName   string
 }
 
 func (f *fakeKubernetesClient) ServerVersion() (*version.Info, error) {
@@ -34,7 +35,9 @@ func (f *fakeKubernetesClient) ListNamespaces(
 	}
 	return f.namespaceList, nil
 }
-
+func (f *fakeKubernetesClient) ClusterName() string {
+	return f.clusterName
+}
 func (f *fakeKubernetesClient) ListPods(
 	_ context.Context,
 ) (*corev1.PodList, error) {
@@ -69,6 +72,7 @@ func newHealthyFakeKubernetesClient() *fakeKubernetesClient {
 		serverVersion: &version.Info{
 			GitVersion: "v1.34.0",
 		},
+		clusterName: "test-cluster",
 		nodes: &corev1.NodeList{
 			Items: []corev1.Node{
 				{

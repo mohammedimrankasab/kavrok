@@ -15,6 +15,7 @@ func TestDiscover(t *testing.T) {
 	t.Parallel()
 
 	client := &fakeKubernetesClient{
+		clusterName: "test-cluster",
 		serverVersion: &version.Info{
 			GitVersion: "v1.34.0",
 			Platform:   "linux/arm64",
@@ -32,6 +33,13 @@ func TestDiscover(t *testing.T) {
 			"expected version %q, got %q",
 			"v1.34.0",
 			result.Version,
+		)
+	}
+	if result.Name != "test-cluster" {
+		t.Errorf(
+			"expected cluster name %q, got %q",
+			"test-cluster",
+			result.Name,
 		)
 	}
 

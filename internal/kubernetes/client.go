@@ -6,7 +6,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"path/filepath"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -19,6 +18,7 @@ import (
 // Client represents the Kubernetes operations required by Kavrok.
 type Client interface {
 	ServerVersion() (*version.Info, error)
+	ClusterName() string
 	ListNodes(ctx context.Context) (*corev1.NodeList, error)
 
 	ListNamespaces(context.Context) (*corev1.NamespaceList, error)
@@ -27,12 +27,13 @@ type Client interface {
 
 // client implements Client using Kubernetes client-go.
 type client struct {
-	clientset kubernetes.Interface
+	clientset   kubernetes.Interface
+	clusterName string
 }
 
 // New creates a Kubernetes client using the current kubeconfig.
 func New() (Client, error) {
-	config, err := loadConfig()
+	config, name, err := loadConfig()
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +44,8 @@ func New() (Client, error) {
 	}
 
 	return &client{
-		clientset: clientset,
+		clientset:   clientset,
+		clusterName: name,
 	}, nil
 }
 
@@ -53,6 +55,11 @@ func (c *client) ServerVersion() (*version.Info, error) {
 		ServerVersion()
 }
 
+// ClusterName returns the current kubeconfig context name.
+func (c *client) ClusterName() string {
+	return c.clusterName
+}
+
 // ListNodes returns all nodes in the Kubernetes cluster.
 func (c *client) ListNodes(ctx context.Context) (*corev1.NodeList, error) {
 	return c.clientset.CoreV1().
@@ -60,19 +67,33 @@ func (c *client) ListNodes(ctx context.Context) (*corev1.NodeList, error) {
 		List(ctx, metav1.ListOptions{})
 }
 
-func loadConfig() (*rest.Config, error) {
-	if configPath := os.Getenv("KUBECONFIG"); configPath != "" {
-		return clientcmd.BuildConfigFromFlags("", configPath)
+func loadConfig() (*rest.Config, string, error) {
+	loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
+
+	if kubeconfig := os.Getenv("KUBECONFIG"); kubeconfig != "" {
+		loadingRules.ExplicitPath = kubeconfig
 	}
 
-	home, err := os.UserHomeDir()
+	overrides := &clientcmd.ConfigOverrides{}
+
+	config, err := loadingRules.Load()
 	if err != nil {
-		return nil, fmt.Errorf("determine home directory: %w", err)
+		return nil, "", fmt.Errorf("load kubeconfig: %w", err)
 	}
 
-	configPath := filepath.Join(home, ".kube", "config")
+	clientConfig := clientcmd.NewNonInteractiveClientConfig(
+		*config,
+		config.CurrentContext,
+		overrides,
+		loadingRules,
+	)
 
-	return clientcmd.BuildConfigFromFlags("", configPath)
+	restConfig, err := clientConfig.ClientConfig()
+	if err != nil {
+		return nil, "", fmt.Errorf("build kubernetes config: %w", err)
+	}
+
+	return restConfig, config.CurrentContext, nil
 }
 
 // ListNamespaces returns all namespaces in the Kubernetes cluster.

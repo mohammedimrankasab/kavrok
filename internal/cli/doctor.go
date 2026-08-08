@@ -84,6 +84,14 @@ func renderDoctorResult(
 	if _, err := fmt.Fprintf(
 		out,
 		"Cluster:    %s\n",
+		snapshot.Cluster.Name,
+	); err != nil {
+		return err
+	}
+
+	if _, err := fmt.Fprintf(
+		out,
+		"Version:    %s\n",
 		snapshot.Cluster.Version,
 	); err != nil {
 		return err

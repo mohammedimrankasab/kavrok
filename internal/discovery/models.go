@@ -3,6 +3,7 @@ package discovery
 
 // ClusterInfo contains information about the Kubernetes cluster.
 type ClusterInfo struct {
+	Name     string
 	Version  string
 	Platform string
 	Commit   string
@@ -39,10 +40,12 @@ type NamespaceSummary struct {
 
 // PodSummary contains information about a Kubernetes pod.
 type PodSummary struct {
-	Name      string
-	Namespace string
-	Phase     string
-	Ready     bool
+	Name           string
+	Namespace      string
+	Phase          string
+	Ready          bool
+	PendingReason  string
+	PendingMessage string
 }
 
 // WorkloadSummary contains high-level workload information.
@@ -53,6 +56,7 @@ type WorkloadSummary struct {
 	FailedPods   int
 	ReadyPods    int
 	NotReadyPods int
+	Pods         []PodSummary
 }
 
 // ClusterSnapshot contains the discovered state of a Kubernetes cluster.

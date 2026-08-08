@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/mohammedimrankasab/kavrok/internal/discovery"
+	corev1 "k8s.io/api/core/v1"
 )
 
 func analyzePods(
@@ -13,14 +14,43 @@ func analyzePods(
 
 	workloads := snapshot.Workloads
 
-	if workloads.PendingPods > 0 {
+	unschedulablePods := 0
+
+	for _, pod := range workloads.Pods {
+		if pod.Phase != string(corev1.PodPending) {
+			continue
+		}
+
+		if pod.PendingReason != "Unschedulable" &&
+			pod.PendingReason != "FailedScheduling" {
+			continue
+		}
+
+		unschedulablePods++
+
+		findings = append(findings, Finding{
+			Severity: SeverityWarning,
+			Code:     "POD_UNSCHEDULABLE",
+			Title:    "Pod cannot be scheduled",
+			Message: fmt.Sprintf(
+				"%s/%s: %s",
+				pod.Namespace,
+				pod.Name,
+				pod.PendingMessage,
+			),
+		})
+	}
+
+	genericPendingPods := workloads.PendingPods - unschedulablePods
+
+	if genericPendingPods > 0 {
 		findings = append(findings, Finding{
 			Severity: SeverityWarning,
 			Code:     "PODS_PENDING",
 			Title:    "Pods are Pending",
 			Message: fmt.Sprintf(
 				"%d pods are Pending.",
-				workloads.PendingPods,
+				genericPendingPods,
 			),
 		})
 	}

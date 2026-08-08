@@ -24,12 +24,32 @@ func DiscoverWorkloads(
 
 	result := WorkloadSummary{
 		PodCount: len(pods.Items),
+		Pods:     make([]PodSummary, 0, len(pods.Items)),
 	}
 
 	for _, pod := range pods.Items {
+		podSummary := PodSummary{
+			Name:      pod.Name,
+			Namespace: pod.Namespace,
+			Phase:     string(pod.Status.Phase),
+			Ready:     podReady(pod),
+		}
+
+		if pod.Status.Phase == corev1.PodPending {
+			if condition := podPendingCondition(pod); condition != nil {
+				podSummary.PendingReason = condition.Reason
+				podSummary.PendingMessage = condition.Message
+			}
+		}
+		result.Pods = append(result.Pods, podSummary)
+
 		switch pod.Status.Phase {
 		case corev1.PodRunning:
 			result.RunningPods++
+
+			if podReady(pod) {
+				result.ReadyPods++
+			}
 
 		case corev1.PodPending:
 			result.PendingPods++
@@ -37,13 +57,9 @@ func DiscoverWorkloads(
 		case corev1.PodFailed:
 			result.FailedPods++
 		}
-
-		if podReady(pod) {
-			result.ReadyPods++
-		}
 	}
 
-	result.NotReadyPods = result.PodCount - result.ReadyPods
+	result.NotReadyPods = result.RunningPods - result.ReadyPods
 
 	return result, nil
 }
@@ -56,4 +72,18 @@ func podReady(pod corev1.Pod) bool {
 	}
 
 	return false
+}
+func podPendingCondition(
+	pod corev1.Pod,
+) *corev1.PodCondition {
+	for i := range pod.Status.Conditions {
+		condition := &pod.Status.Conditions[i]
+
+		if condition.Type == corev1.PodScheduled &&
+			condition.Status == corev1.ConditionFalse {
+			return condition
+		}
+	}
+
+	return nil
 }

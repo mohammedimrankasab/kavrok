@@ -17,6 +17,7 @@ func TestDoctorCommand(t *testing.T) {
 
 	cmd := newDoctorCommand(func() (kubernetes.Client, error) {
 		return &fakeKubernetesClient{
+			clusterName: "test-cluster",
 			serverVersion: &k8sversion.Info{
 				GitVersion: "v1.34.0",
 			},
@@ -43,7 +44,17 @@ func TestDoctorCommand(t *testing.T) {
 	// Normalize multiple internal spaces into a single space for testing
 	normalizedResult := strings.Join(strings.Fields(output.String()), " ")
 
-	for _, expected := range []string{"Kavrok Doctor", "Cluster: v1.34.0", "Nodes: 1", "Namespaces: 0", "Pods: 0", "CLUSTER_HEALTHY", "No known health issues were detected.", "Result: PASSED"} {
+	for _, expected := range []string{
+		"Kavrok Doctor",
+		"Cluster: test-cluster",
+		"Version: v1.34.0",
+		"Nodes: 1",
+		"Namespaces: 0",
+		"Pods: 0",
+		"CLUSTER_HEALTHY",
+		"No known health issues were detected.",
+		"Result: PASSED",
+	} {
 		if !strings.Contains(normalizedResult, expected) {
 			t.Errorf(
 				"expected output to contain %q, got %q",

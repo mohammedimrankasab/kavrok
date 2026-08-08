@@ -12,6 +12,7 @@ import (
 
 type fakeKubernetesClient struct {
 	serverVersion *version.Info
+	clusterName   string
 	err           error
 	nodes         *corev1.NodeList
 	namespaceList *corev1.NamespaceList
@@ -20,6 +21,9 @@ type fakeKubernetesClient struct {
 
 func (f *fakeKubernetesClient) ServerVersion() (*version.Info, error) {
 	return f.serverVersion, f.err
+}
+func (f *fakeKubernetesClient) ClusterName() string {
+	return f.clusterName
 }
 func (f *fakeKubernetesClient) ListNodes(
 	_ context.Context,
@@ -95,6 +99,7 @@ func TestRunnerRunKubernetesAvailable(t *testing.T) {
 	t.Parallel()
 
 	client := &fakeKubernetesClient{
+		clusterName: "test-cluster",
 		serverVersion: &version.Info{
 			GitVersion: "v1.34.0",
 		},

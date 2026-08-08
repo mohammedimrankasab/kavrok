@@ -22,6 +22,7 @@ func Discover(client kubernetes.Client) (ClusterInfo, error) {
 	}
 
 	return ClusterInfo{
+		Name:     client.ClusterName(),
 		Version:  info.GitVersion,
 		Platform: info.Platform,
 		Commit:   info.GitCommit,
