@@ -60,7 +60,7 @@ func TestWriteReportFailed(t *testing.T) {
 			{
 				Name:    "kubernetes",
 				Status:  statusFail,
-				Message: "kubeconfig unavailable",
+				Message: "Kubeconfig unavailable",
 			},
 		},
 	}
@@ -75,7 +75,7 @@ func TestWriteReportFailed(t *testing.T) {
 		"Kavrok Doctor",
 		"✓",
 		"✗",
-		"kubeconfig unavailable",
+		"Kubeconfig unavailable",
 		"Result: FAILED",
 	} {
 		if !strings.Contains(output.String(), expected) {

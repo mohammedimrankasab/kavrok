@@ -2,32 +2,37 @@
 package main
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/mohammedimrankasab/kavrok/internal/cli"
 	"github.com/mohammedimrankasab/kavrok/internal/kubernetes"
 	"github.com/mohammedimrankasab/kavrok/internal/logger"
+	"go.uber.org/zap"
 )
 
 func main() {
-	if err := run(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
+	log, err := logger.New()
+	if err != nil {
 		os.Exit(1)
+	}
+
+	exitCode := run(log)
+
+	_ = log.Sync()
+
+	if exitCode != 0 {
+		os.Exit(exitCode)
 	}
 }
 
-func run() error {
-	log, err := logger.New()
+func run(log *zap.Logger) int {
+	err := cli.Execute(cli.Dependencies{
+		KubernetesClientFactory: kubernetes.New,
+	})
 	if err != nil {
-		return err
+		log.Error("application failed", zap.Error(err))
+		return 1
 	}
 
-	defer func() {
-		_ = log.Sync()
-	}()
-
-	return cli.NewRootCommand(cli.Dependencies{
-		KubernetesClientFactory: kubernetes.New,
-	}).Execute()
+	return 0
 }

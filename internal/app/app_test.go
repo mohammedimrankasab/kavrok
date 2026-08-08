@@ -30,9 +30,11 @@ func TestExecute(t *testing.T) {
 		t.Fatalf("failed to initialize logger: %v", err)
 	}
 
-	app := New(log)
+	application := New(log)
 
-	if err := app.Execute(); err != nil {
-		t.Fatalf("Execute() returned error: %v", err)
+	err = application.Execute()
+	if err != nil {
+		t.Fatalf("Execute() failed: %v", err)
 	}
+
 }
