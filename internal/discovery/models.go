@@ -22,3 +22,12 @@ type NodeSummary struct {
 type NodeSummaryList struct {
 	Nodes []NodeSummary
 }
+
+// ClusterSummary contains the high-level health state of a Kubernetes cluster.
+type ClusterSummary struct {
+	KubernetesVersion string
+	NodeCount         int
+	ReadyNodes        int
+	NotReadyNodes     int
+	Healthy           bool
+}
