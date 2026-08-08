@@ -31,3 +31,35 @@ type ClusterSummary struct {
 	NotReadyNodes     int
 	Healthy           bool
 }
+
+// NamespaceSummary contains information about a Kubernetes namespace.
+type NamespaceSummary struct {
+	Name string
+}
+
+// PodSummary contains information about a Kubernetes pod.
+type PodSummary struct {
+	Name      string
+	Namespace string
+	Phase     string
+	Ready     bool
+}
+
+// WorkloadSummary contains high-level workload information.
+type WorkloadSummary struct {
+	PodCount     int
+	RunningPods  int
+	PendingPods  int
+	FailedPods   int
+	ReadyPods    int
+	NotReadyPods int
+}
+
+// ClusterSnapshot contains the discovered state of a Kubernetes cluster.
+type ClusterSnapshot struct {
+	Cluster    ClusterInfo
+	Nodes      NodeSummaryList
+	Namespaces []NamespaceSummary
+	Workloads  WorkloadSummary
+	Health     ClusterSummary
+}

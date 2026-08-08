@@ -12,9 +12,13 @@ import (
 type fakeKubernetesClient struct {
 	serverVersion *version.Info
 	nodes         *corev1.NodeList
+	namespaces    *corev1.NamespaceList
+	pods          *corev1.PodList
 
-	versionErr error
-	nodesErr   error
+	versionErr    error
+	nodesErr      error
+	namespacesErr error
+	podsErr       error
 }
 
 func (f *fakeKubernetesClient) ServerVersion() (*version.Info, error) {
@@ -33,6 +37,18 @@ func (f *fakeKubernetesClient) ListNodes(
 	}
 
 	return f.nodes, nil
+}
+
+func (f *fakeKubernetesClient) ListNamespaces(
+	_ context.Context,
+) (*corev1.NamespaceList, error) {
+	return f.namespaces, f.namespacesErr
+}
+
+func (f *fakeKubernetesClient) ListPods(
+	_ context.Context,
+) (*corev1.PodList, error) {
+	return f.pods, f.podsErr
 }
 
 var _ kubernetes.Client = (*fakeKubernetesClient)(nil)

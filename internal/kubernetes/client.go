@@ -20,6 +20,9 @@ import (
 type Client interface {
 	ServerVersion() (*version.Info, error)
 	ListNodes(ctx context.Context) (*corev1.NodeList, error)
+
+	ListNamespaces(context.Context) (*corev1.NamespaceList, error)
+	ListPods(context.Context) (*corev1.PodList, error)
 }
 
 // client implements Client using Kubernetes client-go.
@@ -70,4 +73,22 @@ func loadConfig() (*rest.Config, error) {
 	configPath := filepath.Join(home, ".kube", "config")
 
 	return clientcmd.BuildConfigFromFlags("", configPath)
+}
+
+// ListNamespaces returns all namespaces in the Kubernetes cluster.
+func (c *client) ListNamespaces(
+	ctx context.Context,
+) (*corev1.NamespaceList, error) {
+	return c.clientset.CoreV1().
+		Namespaces().
+		List(ctx, metav1.ListOptions{})
+}
+
+// ListPods returns all pods across all namespaces.
+func (c *client) ListPods(
+	ctx context.Context,
+) (*corev1.PodList, error) {
+	return c.clientset.CoreV1().
+		Pods("").
+		List(ctx, metav1.ListOptions{})
 }
