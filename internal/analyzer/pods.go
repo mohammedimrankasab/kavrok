@@ -43,8 +43,9 @@ func analyzePods(
 			Message:  message,
 		}
 
-		if evidence := memorySchedulingEvidence(
+		if evidence := resourceSchedulingEvidence(
 			snapshot,
+			pod.RequestedCPU,
 			pod.RequestedMemory,
 		); len(evidence) > 0 {
 			finding.Evidence = append(
@@ -97,28 +98,70 @@ func analyzePods(
 	return findings
 }
 
-func memorySchedulingEvidence(
+func resourceSchedulingEvidence(
 	snapshot discovery.ClusterSnapshot,
+	requestedCPU string,
 	requestedMemory string,
 ) []Evidence {
-	requested, err := resource.ParseQuantity(requestedMemory)
+	if requestedCPU != "" {
+		if evidence := resourceEvidence(
+			snapshot,
+			requestedCPU,
+			func(node discovery.NodeSummary) string {
+				return node.AllocatableCPU
+			},
+			"requested_cpu",
+			"allocatable_cpu",
+			"requested CPU exceeds node allocatable CPU",
+		); len(evidence) > 0 {
+			return evidence
+		}
+	}
+
+	if requestedMemory != "" {
+		if evidence := resourceEvidence(
+			snapshot,
+			requestedMemory,
+			func(node discovery.NodeSummary) string {
+				return node.AllocatableMemory
+			},
+			"requested_memory",
+			"allocatable_memory",
+			"requested memory exceeds node allocatable memory",
+		); len(evidence) > 0 {
+			return evidence
+		}
+	}
+
+	return nil
+}
+
+func resourceEvidence(
+	snapshot discovery.ClusterSnapshot,
+	requestedValue string,
+	allocatable func(discovery.NodeSummary) string,
+	requestedKey string,
+	allocatableKey string,
+	diagnosis string,
+) []Evidence {
+	requested, err := resource.ParseQuantity(requestedValue)
 	if err != nil {
 		return nil
 	}
 
 	for _, node := range snapshot.Nodes.Nodes {
-		if node.AllocatableMemory == "" {
+		value := allocatable(node)
+
+		if value == "" {
 			continue
 		}
 
-		allocatable, err := resource.ParseQuantity(
-			node.AllocatableMemory,
-		)
+		available, err := resource.ParseQuantity(value)
 		if err != nil {
 			continue
 		}
 
-		if requested.Cmp(allocatable) <= 0 {
+		if requested.Cmp(available) <= 0 {
 			return nil
 		}
 
@@ -128,16 +171,16 @@ func memorySchedulingEvidence(
 				Value: node.Name,
 			},
 			{
-				Key:   "requested_memory",
-				Value: requestedMemory,
+				Key:   requestedKey,
+				Value: requestedValue,
 			},
 			{
-				Key:   "allocatable_memory",
-				Value: node.AllocatableMemory,
+				Key:   allocatableKey,
+				Value: value,
 			},
 			{
 				Key:   "diagnosis",
-				Value: "requested memory exceeds node allocatable memory",
+				Value: diagnosis,
 			},
 		}
 	}
